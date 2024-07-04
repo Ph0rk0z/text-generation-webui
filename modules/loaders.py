@@ -28,7 +28,6 @@ loaders_and_params = OrderedDict({
         'no_use_fast',
         'use_flash_attention_2',
         'alpha_value',
-        'rope_freq_base',
         'compress_pos_emb',
         'disable_exllama',
         'disable_exllamav2',
@@ -46,7 +45,6 @@ loaders_and_params = OrderedDict({
         'no_mmap',
         'mlock',
         'no_mul_mat_q',
-        'alpha_value',
         'rope_freq_base',
         'compress_pos_emb',
         'numa',
@@ -69,7 +67,6 @@ loaders_and_params = OrderedDict({
         'no_mmap',
         'mlock',
         'no_mul_mat_q',
-        'alpha_value',
         'rope_freq_base',
         'compress_pos_emb',
         'numa',
@@ -198,6 +195,11 @@ loaders_and_params = OrderedDict({
         'quant_attn',
         'flash_attention',
     ],
+    'TensorRT-LLM': [
+        'max_seq_len',
+        'cpp_runner',
+        'tensorrt_llm_info',
+    ]
 })
 
 
@@ -434,6 +436,16 @@ loaders_samplers = {
         'skip_special_tokens',
         'auto_max_new_tokens',
     },
+    'TensorRT-LLM': {
+        'temperature',
+        'top_p',
+        'top_k',
+        'repetition_penalty',
+        'presence_penalty',
+        'frequency_penalty',
+        'ban_eos_token',
+        'auto_max_new_tokens',
+    }
 }
 
 loaders_model_types = {
