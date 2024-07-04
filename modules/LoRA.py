@@ -213,7 +213,7 @@ def add_lora_autogptq(lora_names):
         if len(lora_names) > 1:
             logger.warning('AutoGPTQ can only work with 1 LoRA at the moment. Only the first one in the list will be loaded.')
         if shared.args.quant_attn:
-            logger.warning('Quant Atttention + AutoGPTQ may break Lora loading, turn it off!')
+            logger.warning('Quant Attention + AutoGPTQ may break Lora loading, turn it off!')
 
         peft_config = GPTQLoraConfig(
             inference_mode=True,

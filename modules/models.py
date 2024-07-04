@@ -26,7 +26,7 @@ from transformers import (
 
 import modules.shared as shared
 from modules import llama_attn_hijack
-from modules import RoPE, sampler_hijack
+from modules import sampler_hijack
 from modules.logging_colors import logger
 from modules.models_settings import get_model_metadata
 
@@ -80,6 +80,7 @@ def load_model(model_name, loader=None):
         'AutoAWQ': AutoAWQ_loader,
         'QuIP#': QuipSharp_loader,
         'HQQ': HQQ_loader,
+        'TensorRT-LLM': TensorRT_LLM_loader,
     }
 
     metadata = get_model_metadata(model_name)
@@ -109,7 +110,7 @@ def load_model(model_name, loader=None):
         llama_attn_hijack.hijack_llama_attention()
 
     shared.settings.update({k: v for k, v in metadata.items() if k in shared.settings})
-    if loader.lower().startswith('exllama'):
+    if loader.lower().startswith('exllama') or loader.lower().startswith('tensorrt'):
         shared.settings['truncation_length'] = shared.args.max_seq_len
     elif loader in ['llama.cpp', 'llamacpp_HF']:
         shared.settings['truncation_length'] = shared.args.n_ctx
@@ -256,7 +257,7 @@ def huggingface_loader(model_name):
         if shared.args.compress_pos_emb > 1:
             params['rope_scaling'] = {'type': 'linear', 'factor': shared.args.compress_pos_emb}
         elif shared.args.alpha_value > 1:
-            params['rope_scaling'] = {'type': 'dynamic', 'factor': RoPE.get_alpha_value(shared.args.alpha_value, shared.args.rope_freq_base)}
+            params['rope_scaling'] = {'type': 'dynamic', 'factor': shared.args.alpha_value}
 
         logger.info("TRANSFORMERS_PARAMS=")
         pprint.PrettyPrinter(indent=4, sort_dicts=False).pprint(params)
@@ -390,6 +391,13 @@ def HQQ_loader(model_name):
     model_dir = Path(f'{shared.args.model_dir}/{model_name}')
     model = AutoHQQHFModel.from_quantized(str(model_dir))
     HQQLinear.set_backend(getattr(HQQBackend, shared.args.hqq_backend))
+    return model
+
+
+def TensorRT_LLM_loader(model_name):
+    from modules.tensorrt_llm import TensorRTLLMModel
+
+    model = TensorRTLLMModel.from_pretrained(model_name)
     return model
 
 
