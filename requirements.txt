@@ -9,7 +9,8 @@ exllamav2; platform_system != "Darwin" and platform_machine != "x86_64"
 hqq
 gradio==4.26.*
 hqq==0.1.7.post3
-jinja2==3.1.2
+jinja2==3.1.4
+lm_eval==0.3.0
 markdown
 numba==0.59.*
 numpy==1.26.*
@@ -55,5 +56,6 @@ https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/text
 
 # GPTQ-for-LLaMa - Clone into repositories
 #https://github.com/Ph0rk0z/GPTQ-Merged
+
 
 

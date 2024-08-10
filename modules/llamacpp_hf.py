@@ -9,7 +9,7 @@ from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from modules import llama_cpp_python_hijack, shared
+from modules import shared
 from modules.logging_colors import logger
 
 
@@ -198,7 +198,14 @@ class LlamacppHF(PreTrainedModel):
             'split_mode': 1 if not shared.args.row_split else 2,
             'flash_attn': shared.args.flash_attn
         }
-    
+
+        if shared.args.cache_4bit:
+            params["type_k"] = 2
+            params["type_v"] = 2
+        elif shared.args.cache_8bit:
+            params["type_k"] = 8
+            params["type_v"] = 8
+
         model = llama_cpp.Llama(**params)
 
         return LlamacppHF(model, model_file)
