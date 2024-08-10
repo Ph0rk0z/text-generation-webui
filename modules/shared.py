@@ -13,7 +13,6 @@ from modules.logging_colors import logger
 model = None
 tokenizer = None
 model_name = 'None'
-previous_model_name = 'None'
 is_seq2seq = False
 model_dirty_from_training = False
 lora_names = []
@@ -33,7 +32,7 @@ settings = {
     'dark_theme': True,
     'show_controls': True,
     'start_with': '',
-    'mode': 'chat',
+    'mode': 'chat-instruct',
     'chat_style': 'cai-chat',
     'prompt-default': 'QA',
     'prompt-notebook': 'QA',
@@ -44,8 +43,6 @@ settings = {
     'negative_prompt': '',
     'seed': -1,
     'truncation_length': 2048,
-    'truncation_length_min': 0,
-    'truncation_length_max': 200000,
     'max_tokens_second': 0,
     'max_updates_second': 0,
     'prompt_lookup_num_tokens': 0,
@@ -108,6 +105,7 @@ group.add_argument('--trust-remote-code', action='store_true', help='Set trust_r
 group.add_argument('--force-safetensors', action='store_true', help='Set use_safetensors=True while loading the model. This prevents arbitrary code execution.')
 group.add_argument('--no_use_fast', action='store_true', help='Set use_fast=False while loading the tokenizer (it\'s True by default). Use this if you have any problems related to use_fast.')
 group.add_argument('--use_flash_attention_2', action='store_true', help='Set use_flash_attention_2=True while loading the model.')
+group.add_argument('--use_eager_attention', action='store_true', help='Set attn_implementation= eager while loading the model.')
 
 # bitsandbytes 4-bit
 group = parser.add_argument_group('bitsandbytes 4-bit')
@@ -128,7 +126,7 @@ group.add_argument('--n_batch', type=int, default=512, help='Maximum number of p
 group.add_argument('--no-mmap', action='store_true', help='Prevent mmap from being used.')
 group.add_argument('--mlock', action='store_true', help='Force the system to keep the model in RAM.')
 group.add_argument('--n-gpu-layers', type=int, default=0, help='Number of layers to offload to the GPU.')
-group.add_argument('--tensor_split', type=str, default=None, help='Split the model across multiple GPUs. Comma-separated list of proportions. Example: 18,17.')
+group.add_argument('--tensor_split', type=str, default=None, help='Split the model across multiple GPUs. Comma-separated list of proportions. Example: 60,40.')
 group.add_argument('--numa', action='store_true', help='Activate NUMA task allocation for llama.cpp.')
 group.add_argument('--main-gpu', type=int, default=0, help='Main GPU to use for CPP.')
 group.add_argument('--logits_all', action='store_true', help='Needs to be set for perplexity evaluation to work. Otherwise, ignore it, as it makes prompt processing slower.')
@@ -145,6 +143,8 @@ group.add_argument('--autosplit', action='store_true', help='Autosplit the model
 group.add_argument('--max_seq_len', type=int, default=2048, help='Maximum sequence length.')
 group.add_argument('--cfg-cache', action='store_true', help='ExLlamav2_HF: Create an additional cache for CFG negative prompts. Necessary to use CFG with that loader.')
 group.add_argument('--no_flash_attn', action='store_true', help='Force flash-attention to not be used.')
+group.add_argument('--no_xformers', action='store_true', help='Force xformers to not be used.')
+group.add_argument('--no_sdpa', action='store_true', help='Force Torch SDPA to not be used.')
 group.add_argument('--cache_8bit', action='store_true', help='Use 8-bit cache to save VRAM.')
 group.add_argument('--cache_4bit', action='store_true', help='Use Q4 cache to save VRAM.')
 group.add_argument('--num_experts_per_token', type=int, default=2, help='Number of experts to use for generation. Applies to MoE models like Mixtral.')
@@ -175,10 +175,6 @@ group.add_argument('--xformers', action='store_true', help="Use xformer's memory
 group.add_argument('--sdp-attention', action='store_true', help="Use torch 2.0's sdp attention.")
 group.add_argument('--flash-attention', action='store_true', help="Use Flash Attention 2. Compute 7.0 and up Required")
 
-
-# AutoAWQ
-group = parser.add_argument_group('AutoAWQ')
-group.add_argument('--no_inject_fused_attention', action='store_true', help='Disable the use of fused attention, which will use less VRAM at the cost of slower inference.')
 
 # HQQ
 group = parser.add_argument_group('HQQ')
@@ -211,6 +207,7 @@ group.add_argument('--gradio-auth', type=str, help='Set Gradio authentication pa
 group.add_argument('--gradio-auth-path', type=str, help='Set the Gradio authentication file path. The file should contain one or more user:password pairs in the same format as above.', default=None)
 group.add_argument('--ssl-keyfile', type=str, help='The path to the SSL certificate key file.', default=None)
 group.add_argument('--ssl-certfile', type=str, help='The path to the SSL certificate cert file.', default=None)
+group.add_argument('--subpath', type=str, help='Customize the subpath for gradio, use with reverse proxy')
 
 # API
 group = parser.add_argument_group('API')
